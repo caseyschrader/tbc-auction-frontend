@@ -2,16 +2,16 @@
 {
   "placeholderImages": [
     {
-      "id": "hero-bg",
-      "description": "Clean modern technology background",
-      "imageUrl": "https://picsum.photos/seed/pricewise-hero/1200/400",
-      "imageHint": "technology background"
+      "id": "auction-house-bg",
+      "description": "Medieval fantasy interior background",
+      "imageUrl": "https://picsum.photos/seed/wow-auction/1200/400",
+      "imageHint": "fantasy interior"
     },
     {
-      "id": "product-generic",
-      "description": "Generic product placeholder",
-      "imageUrl": "https://picsum.photos/seed/product/400/300",
-      "imageHint": "product item"
+      "id": "reagent-generic",
+      "description": "Fantasy reagent or herb placeholder",
+      "imageUrl": "https://picsum.photos/seed/reagent/400/300",
+      "imageHint": "fantasy potion"
     }
   ]
 }
