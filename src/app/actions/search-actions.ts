@@ -26,8 +26,19 @@ export async function searchProducts(query: string): Promise<SearchResult> {
     }
     const data = await response.json();
 
-    // Ensure data is an array and sort by numAuctions descending as requested
-    const items: Item[] = Array.isArray(data) ? data : [];
+    const rawItems = Array.isArray(data) ? data : [];
+    
+    // Map and sanitize the data to ensure property names match our expected Item type
+    // and filter out entries that have neither a name nor a valid price
+    const items: Item[] = rawItems.map((raw: any) => ({
+      name: raw.name || raw.itemName || raw.item_name || 'Unknown Item',
+      minBuyout: Number(raw.minBuyout || raw.buyout || 0),
+      marketValue: Number(raw.marketValue || raw.market_value || 0),
+      numAuctions: Number(raw.numAuctions || raw.auctions || 0),
+      snapshot_time: raw.snapshot_time || raw.updated_at || new Date().toISOString(),
+    })).filter(item => item.minBuyout > 0 || item.name !== 'Unknown Item');
+
+    // Sort by numAuctions descending as requested
     const sortedItems = items.sort((a, b) => b.numAuctions - a.numAuctions);
 
     return { items: sortedItems };
