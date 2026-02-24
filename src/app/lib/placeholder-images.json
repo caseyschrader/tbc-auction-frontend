@@ -1,0 +1,17 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-bg",
+      "description": "Clean modern technology background",
+      "imageUrl": "https://picsum.photos/seed/pricewise-hero/1200/400",
+      "imageHint": "technology background"
+    },
+    {
+      "id": "product-generic",
+      "description": "Generic product placeholder",
+      "imageUrl": "https://picsum.photos/seed/product/400/300",
+      "imageHint": "product item"
+    }
+  ]
+}
