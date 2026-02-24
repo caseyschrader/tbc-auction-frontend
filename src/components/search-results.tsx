@@ -45,7 +45,7 @@ export function SearchResults({ results, isLoading }: SearchResultsProps) {
           <CardHeader className="pb-2">
             <div className="flex justify-between items-start gap-4">
               <CardTitle className="text-2xl font-extrabold group-hover:text-primary transition-colors line-clamp-2">
-                {item.name || 'Unknown Item'}
+                {item.name}
               </CardTitle>
               <div className="flex flex-col items-end gap-1">
                 <div className="flex items-center gap-1.5 text-2xl font-black text-primary">

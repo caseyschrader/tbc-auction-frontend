@@ -20,21 +20,34 @@ export async function searchProducts(query: string): Promise<SearchResult> {
   }
 
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/item/${encodeURIComponent(normalizedQuery)}`);
+    const response = await fetch(`${process.env.API_URL}/item/${encodeURIComponent(normalizedQuery)}`);
     if (!response.ok) {
       return { items: [] };
     }
+    
     const data = await response.json();
 
-    const rawItems = Array.isArray(data) ? data : [];
-    
+    // Flexible response parsing for arrays or nested objects
+    let rawItems: any[] = [];
+    if (Array.isArray(data)) {
+      rawItems = data;
+    } else if (data && typeof data === 'object') {
+      if (Array.isArray(data.items)) {
+        rawItems = data.items;
+      } else if (Array.isArray(data.results)) {
+        rawItems = data.results;
+      } else if (data.Display_lang || data.name || data.itemName) {
+        // It's a single item object
+        rawItems = [data];
+      }
+    }
+
     const items: Item[] = rawItems.map((raw: any) => {
-      // Handle the item name mapping from the hint 'Display_lang'
+      // Robust name resolution
       let name = 'Unknown Item';
       if (typeof raw.Display_lang === 'string') {
         name = raw.Display_lang;
       } else if (raw.Display_lang && typeof raw.Display_lang === 'object') {
-        // Many WoW APIs use nested language keys like en_US
         name = raw.Display_lang.en_US || Object.values(raw.Display_lang)[0] as string || name;
       } else {
         name = raw.name || raw.itemName || raw.item_name || name;
@@ -54,6 +67,7 @@ export async function searchProducts(query: string): Promise<SearchResult> {
 
     return { items: sortedItems };
   } catch (error) {
+    console.error('Search error:', error);
     return { items: [] };
   }
 }
