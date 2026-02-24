@@ -32,22 +32,27 @@ export async function searchProducts(query: string): Promise<SearchResult> {
     if (Array.isArray(data)) {
       rawItems = data;
     } else if (data && typeof data === 'object') {
-      if (Array.isArray(data.items)) {
-        rawItems = data.items;
-      } else if (Array.isArray(data.results)) {
-        rawItems = data.results;
-      } else if (data.Display_lang) {
+      // Look for the first property that contains an array (e.g., "items", "results", etc.)
+      const arrayKey = Object.keys(data).find(k => Array.isArray(data[k]));
+      if (arrayKey) {
+        rawItems = data[arrayKey];
+      } else {
+        // Treat as a single item if no array is found but it looks like an item
         rawItems = [data];
       }
     }
 
     const items: Item[] = rawItems.map((raw: any) => {
-      // Handle Display_lang as a string or a localized object (e.g., { en_US: "..." })
+      // Find the Display_lang property in a case-insensitive way
       let displayName = 'Unknown Item';
-      if (typeof raw.Display_lang === 'string') {
-        displayName = raw.Display_lang;
-      } else if (raw.Display_lang && typeof raw.Display_lang === 'object') {
-        displayName = raw.Display_lang.en_US || Object.values(raw.Display_lang)[0] as string || displayName;
+      const nameKey = Object.keys(raw).find(k => k.toLowerCase() === 'display_lang');
+      const val = nameKey ? raw[nameKey] : null;
+
+      if (typeof val === 'string') {
+        displayName = val;
+      } else if (val && typeof val === 'object') {
+        // Handle localized object (e.g., { en_US: "..." })
+        displayName = val.en_US || Object.values(val)[0] as string || displayName;
       }
 
       return {
