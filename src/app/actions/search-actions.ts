@@ -1,24 +1,37 @@
-
 'use server';
 
-import { products, Product } from '@/app/lib/products';
+export type Item = {
+  name: string;
+  minBuyout: number;
+  marketValue: number;
+  numAuctions: number;
+  snapshot_time: string;
+};
 
 export type SearchResult = {
-  items: Product[];
+  items: Item[];
 };
 
 export async function searchProducts(query: string): Promise<SearchResult> {
-  const normalizedQuery = query.trim().toLowerCase();
-  
+  const normalizedQuery = query.trim();
+
   if (!normalizedQuery) {
     return { items: [] };
   }
 
-  const results = products.filter(
-    (p) =>
-      p.name.toLowerCase().includes(normalizedQuery) ||
-      p.category.toLowerCase().includes(normalizedQuery)
-  );
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/item/${encodeURIComponent(normalizedQuery)}`);
+    if (!response.ok) {
+      return { items: [] };
+    }
+    const data = await response.json();
 
-  return { items: results };
+    // Ensure data is an array and sort by numAuctions descending as requested
+    const items: Item[] = Array.isArray(data) ? data : [];
+    const sortedItems = items.sort((a, b) => b.numAuctions - a.numAuctions);
+
+    return { items: sortedItems };
+  } catch (error) {
+    return { items: [] };
+  }
 }

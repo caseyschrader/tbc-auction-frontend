@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -50,7 +49,7 @@ export default function Home() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
               <Input
                 type="text"
-                placeholder="Search items: Arcane Dust, Mageweave Cloth, Rugged Leather..."
+                placeholder="Search items: Arcane Dust, Mageweave Cloth, Rugged Leather"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="pl-12 pr-32 h-16 rounded-2xl border-2 border-white bg-white/80 backdrop-blur-sm shadow-xl focus-visible:ring-primary focus-visible:border-primary transition-all text-lg"
@@ -90,7 +89,7 @@ export default function Home() {
           {hasSearched && results.items.length > 0 && !isPending && (
             <div className="flex items-center justify-center gap-2 pt-8 text-sm text-muted-foreground">
               <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-              <p>Showing {results.items.length} current listings</p>
+              <p>Showing {results.items.length} current listings sorted by activity</p>
             </div>
           )}
         </section>
