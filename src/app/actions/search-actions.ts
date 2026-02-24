@@ -47,7 +47,7 @@ export async function searchProducts(query: string): Promise<SearchResult> {
         numAuctions: Number(raw.numAuctions || raw.auctions || 0),
         snapshot_time: raw.snapshot_time || raw.updated_at || new Date().toISOString(),
       };
-    }).filter(item => item.minBuyout > 0 || item.name !== 'Unknown Item');
+    }).filter(item => item.numAuctions > 0 && item.name !== 'Unknown Item');
 
     // Sort by numAuctions descending
     const sortedItems = items.sort((a, b) => b.numAuctions - a.numAuctions);
