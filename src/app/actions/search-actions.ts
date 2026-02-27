@@ -1,10 +1,12 @@
+
 'use server';
 
 export type Item = {
   Display_lang: string;
   minBuyout: number;
-  marketValue: number;
+  quantity: number;
   numAuctions: number;
+  marketValue: number;
   snapshot_time: string;
 };
 
@@ -20,58 +22,66 @@ export async function searchProducts(query: string): Promise<SearchResult> {
   }
 
   try {
-    const response = await fetch(`${process.env.API_URL}/item/${encodeURIComponent(normalizedQuery)}`);
+    const apiUrl = process.env.API_URL;
+    if (!apiUrl) {
+      console.error("API_URL is missing in environment");
+      return { items: [] };
+    }
+
+    const response = await fetch(`${apiUrl}/item/${encodeURIComponent(normalizedQuery)}`, {
+      cache: 'no-store',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
     if (!response.ok) {
       return { items: [] };
     }
-    
+
     const data = await response.json();
 
-    // Support both array responses (broad search) and object responses (specific search)
+    // Robustly handle various response shapes (array, items object, results object, single object)
     let rawItems: any[] = [];
     if (Array.isArray(data)) {
       rawItems = data;
     } else if (data && typeof data === 'object') {
-      // Look for the first property that contains an array (e.g., "items", "results", etc.)
-      const arrayKey = Object.keys(data).find(k => Array.isArray(data[k]));
-      if (arrayKey) {
-        rawItems = data[arrayKey];
-      } else {
-        // Treat as a single item if no array is found but it looks like an item
-        rawItems = [data];
-      }
+      if (Array.isArray(data.items)) rawItems = data.items;
+      else if (Array.isArray(data.results)) rawItems = data.results;
+      else if (data.Display_lang || data.minBuyout) rawItems = [data]; // Likely a single item object
     }
 
-    const items: Item[] = rawItems.map((raw: any) => {
-      // Find the Display_lang property in a case-insensitive way
-      let displayName = 'Unknown Item';
-      const nameKey = Object.keys(raw).find(k => k.toLowerCase() === 'display_lang');
-      const val = nameKey ? raw[nameKey] : null;
+    const items: Item[] = rawItems
+      .map((item: any) => {
+        // Map Display_lang carefully. Handle string or nested object { en_US: "..." }
+        let displayName = "Unknown Item";
+        if (typeof item.Display_lang === 'string') {
+          displayName = item.Display_lang;
+        } else if (item.Display_lang && typeof item.Display_lang === 'object') {
+          // Some WoW APIs return localized objects
+          displayName = item.Display_lang.en_US || 
+                        item.Display_lang.en_GB || 
+                        Object.values(item.Display_lang)[0] as string || 
+                        "Unknown Item";
+        }
 
-      if (typeof val === 'string') {
-        displayName = val;
-      } else if (val && typeof val === 'object') {
-        // Handle localized object (e.g., { en_US: "..." })
-        displayName = val.en_US || Object.values(val)[0] as string || displayName;
-      }
+        return {
+          Display_lang: displayName,
+          minBuyout: Number(item.minBuyout) || 0,
+          quantity: Number(item.quantity) || 0,
+          numAuctions: Number(item.numAuctions) || 0,
+          marketValue: Number(item.marketValue) || 0,
+          snapshot_time: item.snapshot_time || new Date().toISOString(),
+        };
+      })
+      // Filter: must have a valid name and at least one active auction
+      .filter(item => item.Display_lang !== "Unknown Item" && item.numAuctions > 0)
+      // Sort: highest auction volume first
+      .sort((a, b) => b.numAuctions - a.numAuctions);
 
-      return {
-        Display_lang: displayName,
-        minBuyout: Number(raw.minBuyout || 0),
-        marketValue: Number(raw.marketValue || 0),
-        numAuctions: Number(raw.numAuctions || 0),
-        snapshot_time: raw.snapshot_time || new Date().toISOString(),
-      };
-    })
-    // Filter out items with no active auctions and those with missing names
-    .filter(item => item.numAuctions > 0 && item.Display_lang !== 'Unknown Item');
-
-    // Sort by numAuctions descending as requested
-    const sortedItems = items.sort((a, b) => b.numAuctions - a.numAuctions);
-
-    return { items: sortedItems };
+    return { items };
   } catch (error) {
-    console.error('Search error:', error);
+    console.error("Search Action Error:", error);
     return { items: [] };
   }
 }
