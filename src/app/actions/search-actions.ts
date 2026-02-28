@@ -2,12 +2,22 @@
 'use server';
 
 export type Item = {
+  itemId: number | string;
   Display_lang: string;
   minBuyout: number;
   quantity: number;
   numAuctions: number;
   marketValue: number;
   snapshot_time: string;
+};
+
+export type HistoryPoint = {
+  snapshot_time: string;
+  minBuyout: number;
+  marketValue: number;
+  numAuctions: number;
+  rolling_mean: number | null;
+  rolling_stddev: number | null;
 };
 
 export type SearchResult = {
@@ -41,24 +51,21 @@ export async function searchProducts(query: string): Promise<SearchResult> {
 
     const data = await response.json();
 
-    // Robustly handle various response shapes (array, items object, results object, single object)
     let rawItems: any[] = [];
     if (Array.isArray(data)) {
       rawItems = data;
     } else if (data && typeof data === 'object') {
       if (Array.isArray(data.items)) rawItems = data.items;
       else if (Array.isArray(data.results)) rawItems = data.results;
-      else if (data.Display_lang || data.minBuyout) rawItems = [data]; // Likely a single item object
+      else if (data.Display_lang || data.minBuyout) rawItems = [data];
     }
 
     const items: Item[] = rawItems
       .map((item: any) => {
-        // Map Display_lang carefully. Handle string or nested object { en_US: "..." }
         let displayName = "Unknown Item";
         if (typeof item.Display_lang === 'string') {
           displayName = item.Display_lang;
         } else if (item.Display_lang && typeof item.Display_lang === 'object') {
-          // Some WoW APIs return localized objects
           displayName = item.Display_lang.en_US || 
                         item.Display_lang.en_GB || 
                         Object.values(item.Display_lang)[0] as string || 
@@ -66,6 +73,7 @@ export async function searchProducts(query: string): Promise<SearchResult> {
         }
 
         return {
+          itemId: item.ID || item.item_id || item.itemId || 0,
           Display_lang: displayName,
           minBuyout: Number(item.minBuyout) || 0,
           quantity: Number(item.quantity) || 0,
@@ -74,14 +82,31 @@ export async function searchProducts(query: string): Promise<SearchResult> {
           snapshot_time: item.snapshot_time || new Date().toISOString(),
         };
       })
-      // Filter: must have a valid name and at least one active auction
       .filter(item => item.Display_lang !== "Unknown Item" && item.numAuctions > 0)
-      // Sort: highest auction volume first
       .sort((a, b) => b.numAuctions - a.numAuctions);
 
     return { items };
   } catch (error) {
     console.error("Search Action Error:", error);
     return { items: [] };
+  }
+}
+
+export async function getItemHistory(itemId: string | number, days: number = 7): Promise<HistoryPoint[]> {
+  if (!itemId) return [];
+  
+  try {
+    const apiUrl = process.env.API_URL;
+    if (!apiUrl) return [];
+
+    const response = await fetch(`${apiUrl}/item/${itemId}/history?days=${days}`, {
+      cache: 'no-store',
+    });
+
+    if (!response.ok) return [];
+    return await response.json();
+  } catch (error) {
+    console.error("History Fetch Error:", error);
+    return [];
   }
 }
