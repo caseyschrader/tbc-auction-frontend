@@ -2,6 +2,10 @@
 # https://firebase.google.com/docs/app-hosting/configure
 
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
   maxInstances: 1
+
+env:
+  - variable: NEXT_PUBLIC_API_URL
+    value: https://auction-api-935382144182.us-central1.run.app
+  - variable: API_URL
+    value: https://auction-api-935382144182.us-central1.run.app

@@ -6,6 +6,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Coins, Package, Info, TrendingDown, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { PriceHistoryChart } from '@/components/price-history-chart';
+import { DayOfWeekChart } from '@/components/day-of-week-chart';
 
 type SearchResultsProps = {
   results: Item[];
@@ -106,6 +107,12 @@ export function SearchResults({ results, isLoading }: SearchResultsProps) {
               <div className="animate-in fade-in zoom-in-95 duration-700 delay-300">
                 <PriceHistoryChart itemId={item.itemId} itemName={item.Display_lang} />
               </div>
+
+              {/* Day of Week Analysis Section */}
+              <div className="animate-in fade-in zoom-in-95 duration-700 delay-500">
+              <DayOfWeekChart itemId={item.itemId} itemName={item.Display_lang} />
+              </div>
+
             </CardContent>
             
             <CardFooter className="pt-2 border-t bg-slate-50/80 px-6 py-4 flex justify-between items-center">

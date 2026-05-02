@@ -93,7 +93,7 @@ export async function searchProducts(query: string): Promise<SearchResult> {
 }
 
 export async function getItemHistory(itemId: string | number, days: number = 7): Promise<HistoryPoint[]> {
-  if (!itemId) return [];
+  if (itemId === null || itemId === undefined) return [];
   
   try {
     const apiUrl = process.env.API_URL;
@@ -104,9 +104,52 @@ export async function getItemHistory(itemId: string | number, days: number = 7):
     });
 
     if (!response.ok) return [];
-    return await response.json();
+    const data = await response.json();
+    if (!Array.isArray(data)) {
+        return [];
+    }
+    return data.map((d: any) => ({
+        snapshot_time: d.snapshot_time,
+        numAuctions: d.numAuctions,
+        rolling_mean: d.rolling_mean,
+        rolling_stddev: d.rolling_stddev,
+        marketValue: Number(d.marketValue || 0),
+        minBuyout: Number(d.minBuyout || 0)
+    }));
   } catch (error) {
     console.error("History Fetch Error:", error);
+    return [];
+  }
+}
+
+export type DowPoint = {
+  day_num: number;
+  day_of_week: string;
+  avg_market_value: number;
+  avg_min_buyout: number;
+  snapshot_count: number;
+};
+
+export async function getItemDow(itemId: string | number): Promise<DowPoint[]> {
+  if (!itemId) return [];
+  try {
+    const apiUrl = process.env.API_URL;
+    if (!apiUrl) return [];
+    const response = await fetch(`${apiUrl}/item/${itemId}/dow`, { cache: 'no-store' });
+    if (!response.ok) return [];
+    const data = await response.json();
+    if (!Array.isArray(data)) {
+        return [];
+    }
+    return data.map((d: any) => ({
+      day_num: d.day_num,
+      day_of_week: d.day_of_week,
+      snapshot_count: d.snapshot_count,
+      avg_market_value: Number(d.marketValue || d.avg_market_value || 0),
+      avg_min_buyout: Number(d.minBuyout || d.avg_min_buyout || 0),
+    }));
+  } catch (error) {
+    console.error("DOW Fetch Error:", error);
     return [];
   }
 }
